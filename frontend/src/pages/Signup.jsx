@@ -10,6 +10,7 @@ function Signup() {
     password: "",
     role: "student",
     department: "",
+    adminCode: "",
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -89,7 +90,7 @@ function Signup() {
                 placeholder="At least 6 characters"
               />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+         <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Role</label>
                 <select
@@ -126,6 +127,24 @@ function Signup() {
                 </select>
               </div>
             </div>
+
+            {formData.role === "admin" && (
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Admin Access Code</label>
+                <input
+                  type="password"
+                  name="adminCode"
+                  value={formData.adminCode}
+                  onChange={handleChange}
+                  required
+                  placeholder="Enter the admin access code"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent"
+                />
+                <p className="text-xs text-slate-500 mt-1">
+                  This code is provided by the college administration.
+                </p>
+              </div>
+            )}
             <button
               type="submit"
               disabled={loading}

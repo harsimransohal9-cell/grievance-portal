@@ -1,4 +1,6 @@
 const Complaint = require("../models/Complaint");
+const User = require("../models/User");
+const sendEmail = require("../utils/sendEmail");
 
 // Create a complaint (student)
 const createComplaint = async (req, res) => {
@@ -18,6 +20,18 @@ const createComplaint = async (req, res) => {
       photoUrl,
       student: req.user._id,
     });
+
+    // Notify all admins that a new complaint was filed
+    const admins = await User.find({ role: "admin" }).select("email");
+    const adminEmails = admins.map((a) => a.email);
+
+    if (adminEmails.length > 0) {
+      sendEmail({
+        to: adminEmails.join(","),
+        subject: `New Complaint Filed: ${title}`,
+        text: `A new complaint has been filed by ${req.user.name} (${req.user.email}).\n\nTitle: ${title}\nCategory: ${category || "other"}\nDescription: ${description}\n\nPlease log in to the admin dashboard to review it.`,
+      });
+    }
 
     res.status(201).json(complaint);
   } catch (error) {
@@ -88,7 +102,7 @@ const updateComplaintStatus = async (req, res) => {
       return res.status(400).json({ message: "Invalid status value" });
     }
 
-    const complaint = await Complaint.findById(req.params.id);
+    const complaint = await Complaint.findById(req.params.id).populate("student", "name email");
     if (!complaint) {
       return res.status(404).json({ message: "Complaint not found" });
     }
@@ -98,6 +112,26 @@ const updateComplaintStatus = async (req, res) => {
     if (status !== "pending") complaint.escalated = false;
 
     await complaint.save();
+
+    // Notify the student whenever status changes
+    if (complaint.student?.email) {
+      const statusLabel = {
+        pending: "Pending",
+        "in-progress": "In Progress",
+        resolved: "Resolved",
+      }[status];
+
+      sendEmail({
+        to: complaint.student.email,
+        subject: `Your Complaint Status Updated: ${statusLabel}`,
+        text: `Hi ${complaint.student.name},\n\nYour complaint "${complaint.title}" has been updated to: ${statusLabel}.\n\n${
+          status === "resolved"
+            ? "Thank you for your patience. If the issue persists, feel free to file a new complaint."
+            : "We're working on it. You'll be notified of any further updates."
+        }\n\n- Campus Grievance Portal`,
+      });
+    }
+
     res.json(complaint);
   } catch (error) {
     console.error(error);
@@ -105,6 +139,7 @@ const updateComplaintStatus = async (req, res) => {
   }
 };
 
+// Manual escalation trigger (useful for live demo)
 const triggerEscalation = async (req, res) => {
   try {
     const { runEscalationCheck } = require("../utils/escalationCron");

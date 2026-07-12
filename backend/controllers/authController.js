@@ -11,12 +11,18 @@ const generateToken = (id) => {
 // Signup
 const signup = async (req, res) => {
   try {
-    const { name, email, password, role, department } = req.body;
+   const { name, email, password, role, department, adminCode } = req.body;
 
-    if (!name || !email || !password) {
-      return res.status(400).json({ message: "Please fill all required fields" });
-    }
+if (!name || !email || !password) {
+  return res.status(400).json({ message: "Please fill all required fields" });
+}
 
+// If someone is trying to sign up as admin, verify the secret code
+if (role === "admin") {
+  if (!adminCode || adminCode !== process.env.ADMIN_SECRET_CODE) {
+    return res.status(403).json({ message: "Invalid admin access code" });
+  }
+}
     const userExists = await User.findOne({ email });
     if (userExists) {
       return res.status(400).json({ message: "User already exists with this email" });
