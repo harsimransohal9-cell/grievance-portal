@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "http://127.0.0.1:5000/api",
+  baseURL: "grievance-portal-production-1c12.up.railway.app",
 });
 
 // Automatically attach the login token (if it exists) to every request
