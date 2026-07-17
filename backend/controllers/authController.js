@@ -48,7 +48,7 @@ if (role === "admin") {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error during signup" });
+    res.status(500).json({ message: error.message });
   }
 };
 
